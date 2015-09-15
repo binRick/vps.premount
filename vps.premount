@@ -1,0 +1,16 @@
+#!/bin/sh
+[ -f /etc/vz/vz.conf ] || exit 1
+[ -f $VE_CONFFILE ] || exit 1
+. /etc/vz/vz.conf
+. $VE_CONFFILE
+
+
+zfs list tank >/dev/null || exit
+zfs list tank/$VEID >/dev/null 2>/dev/null || zfs create tank/$VEID || exit
+zfs get -Ho value mounted tank/$VEID | grep yes >/dev/null|| zfs mount tank/$VEID || exit
+zfs get -Ho value mounted tank/$VEID | grep yes >/dev/null|| exit
+rsync --numeric-ids -a $VE_PRIVATE /tank/$VEID/private/ || exit
+ls /tank/$VEID/private/$VEID/etc/passwd >/dev/null || exit
+ls /tank/$VEID/root >/dev/null 2>/dev/null || mkdir /tank/$VEID/root || exit
+vzlist -1 -o private $VEID | grep ^/tank/$VEID/private/$VEID || \
+( sleep 3 && vzctl stop $VEID && vzctl set $VEID --private /tank/$VEID/private/$VEID --root /tank/$VEID/root --save --force && vzctl start $VEID --force ) &
