@@ -4,11 +4,21 @@
 . /etc/vz/vz.conf
 . $VE_CONFFILE
 
+if [ "$VE_PRIVATE" == "/tank/$VEID/private/$VEID" ]; then
+	echo "ve private looks ok!"
+	exit 0
+
+fi
+echo fixing private
+
+
 
 zfs list tank >/dev/null || exit
 zfs list tank/$VEID >/dev/null 2>/dev/null || zfs create tank/$VEID || exit
 zfs get -Ho value mounted tank/$VEID | grep yes >/dev/null|| zfs mount tank/$VEID || exit
 zfs get -Ho value mounted tank/$VEID | grep yes >/dev/null|| exit
+ls ${VE_PRIVATE}/etc/passwd || exit
+
 rsync --numeric-ids -a $VE_PRIVATE /tank/$VEID/private/ || exit
 ls /tank/$VEID/private/$VEID/etc/passwd >/dev/null || exit
 ls /tank/$VEID/root >/dev/null 2>/dev/null || mkdir /tank/$VEID/root || exit
